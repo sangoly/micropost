@@ -1,5 +1,5 @@
 module ApplicationHelper
 	def full_title(name)
-		"Base Name #{name}" 
+		"Ruby on Rails Tutorial Sample App | #{name}" 
 	end
 end
