@@ -12,6 +12,7 @@ describe User do
   it { should respond_to(:password_digest) }
   it { should respond_to(:password) }
   it { should respond_to(:password_confirmation) }
+  it { should respond_to(:authenticate) }
   it { should be_valid }
 
   describe "when name is not present" do
@@ -70,5 +71,26 @@ describe User do
   describe "when password is not match confirmation" do
     before { @user.password_confirmation = "dismatch" }
     it { should_not be_valid }    
+  end
+
+  describe "with password this is too short" do
+    before { @user.password = @user.password_confirmation = 'a' * 5 }
+    it { should be_invalid }
+  end
+
+  describe "return value of invalid authenticate" do
+    before { @user.save }
+    let(:founder_user) { User.find_by(email: @user.email) }
+
+    describe "with valid password" do
+      it { should eq founder_user.authenticate(@user.password) }
+    end
+
+    describe "with invalid password" do
+      let(:user_with_invalid_password) { founder_user.authenticate("invalid") }
+      it { should_not eq user_with_invalid_password}
+      #specify is alais of it
+      specify { expect(user_with_invalid_password).to be_false }
+    end
   end
 end
