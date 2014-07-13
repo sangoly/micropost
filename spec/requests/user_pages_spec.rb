@@ -4,6 +4,29 @@ describe "user pages" do
   
   subject { page }
 
+  describe "index" do
+    let(:user) { FactoryGirl.create(:user) }
+    before(:each) do
+      sign_in user
+      visit users_path
+    end
+
+    it { should have_title('All users') }
+    it { should have_content('All users') }
+
+    describe "pagination" do
+      before(:all) { 30.times { |n| FactoryGirl.create(:user) } }
+      after(:all) { User.delete_all }
+    
+      it { should have_selector('div.pagination') }
+      it "should list each user" do
+        User.paginate(page: 1).each do |user|
+          expect(page).to have_selector('li', text: user.name)
+        end
+      end
+    end
+  end
+
   describe "sign up" do
     before { visit signup_path }
     let(:submit) { 'Create my account' }
@@ -53,5 +76,44 @@ describe "user pages" do
   	before { visit user_path(user) }
   	it { should have_content(user.name) }
   	it { should have_title(user.name) }
+  end
+
+  describe "edit" do
+    let(:user) { FactoryGirl.create(:user) }
+    before do
+      sign_in user
+      visit edit_user_path(user)
+    end
+
+    describe "page" do
+      it { should have_content('Update your profile') }
+      it { should have_link('change', href: 'http://gravatar.com/emails') }
+      it { should have_title('Edit user') }
+    end
+
+    describe "with invalid infomation" do
+      before { click_button 'Save change' }
+
+      it { should have_content 'error' }
+    end
+
+    describe "with valid infomation" do
+      let(:new_name) { 'New name' }
+      let(:new_email) { 'new@exmaple.com' }
+
+      before do
+        fill_in 'Name',             with: new_name
+        fill_in 'Email',            with: new_email
+        fill_in 'Password',         with: user.password
+        fill_in 'Confirm',          with: user.password
+        click_button 'Save change'
+      end
+
+      it { should have_title('New name') }
+      it { should have_selector('div.alert.alert-success') }
+      it { should have_link('Sign out', href: signout_path) }
+      specify { expect(user.reload.name).to eq new_name }
+      specify { expect(user.reload.email).to eq new_email }
+    end
   end
 end
